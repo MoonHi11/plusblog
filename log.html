@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>°PLUS | Authentication</title>
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600&family=Orbitron:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+         --primary-light: #e6f7ff;
+            --secondary-light: #f0f9ff;
+            --primary: #00f3ff;
+            --secondary: #ff7eb6;
+            --tertiary: #8c00ff;
+            --dark: #0a0a1a;
+            --darker: #050510;
+            --light: #e0e0ff;
+            --card-bg: rgba(255, 255, 255, 0.15);
+            --text-primary: #1a3c5f;
+            --text-secondary: #4d7ba8;
+             --accent-1: #5ebcff;
+            --accent-2: #ff7eb6;
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glow-primary: 0 0 15px rgba(0, 243, 255, 0.5);
+            --glow-secondary: 0 0 15px rgba(255, 0, 230, 0.5);
+            --success: #00c853;
+            --error: #ff5252;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Exo 2', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--primary-light), var(--secondary-light));
+            color: var(--light);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Generative Background Elements */
+        .generative-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .grid-dot {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: var( --accent-2);
+            border-radius: 50%;
+            opacity: 0.3;
+            box-shadow: var(--glow-secondary);
+        }
+
+        .floating-shape {
+            position: absolute;
+            opacity: 0.1;
+            border-radius: 50%;
+            filter: blur(20px);
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .grid-line {
+            position: absolute;
+            background: rgba(0, 243, 255, 0.05);
+        }
+
+        /* Auth Container */
+        .auth-container {
+            width: 90%;
+            max-width: 450px;
+            background: var(--glass-bg);
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(1px);
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+            z-index: 10;
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 500;
+            background: linear-gradient(90deg, var(--primary-light), var(--secondary-light));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .auth-header p {
+            color: #a0a0d0;
+            font-size: 1.1rem;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 0.5rem;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .tab.active {
+            background: linear-gradient(90deg, var(--accent-1), var( --accent-2));
+            box-shadow: var(--glow-primary);
+        }
+
+        /* Forms */
+        .form-container {
+            position: relative;
+            min-height: 300px;
+            
+            max-height: 305px;
+            overflow-y:auto;
+            
+            background: var(--glass-bg);
+        }
+
+        .form {
+            position: absolute;
+            width: 100%;
+            
+           
+            top: 0;
+            left: 0;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.4s ease;
+            transform: translateY(20px);
+        }
+
+        .form.active {
+            opacity: 1;
+            pointer-events: all;
+            transform: translateY(0);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.9rem 1.2rem;
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            border-radius: 12px;
+            background: var(--glass-bg);
+            font-size: 1rem;
+            transition: all 0.3s;
+            color: var(--text-secondary);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: var(--glow-primary);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            margin-top: 0.5rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        /* Status Messages */
+        .status-message {
+            padding: 1rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+            text-align: center;
+            font-weight: 500;
+            display: none;
+        }
+
+        .success {
+            background: rgba(0, 200, 83, 0.2);
+            color: #006644;
+            border: 1px solid rgba(0, 200, 83, 0.3);
+        }
+
+        .error {
+            background: rgba(255, 82, 82, 0.2);
+            color: #ff5252;
+            border: 1px solid rgba(255, 82, 82, 0.3);
+        }
+
+        /* Footer */
+        .auth-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #a0a0d0;
+            font-size: 0.9rem;
+        }
+
+        .auth-footer a {
+            color: var(--primary);
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .auth-footer a:hover {
+            text-shadow: var(--glow-primary);
+        }
+
+        /* Animations */
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(-10px, -8px) rotate(-5deg); }
+            50% { transform: translate(5px, 10px) rotate(5deg); }
+            75% { transform: translate(8px, -5px) rotate(-3deg); }
+        }
+
+        @keyframes float2 {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(8px, -10px) rotate(5deg); }
+            50% { transform: translate(-10px, 8px) rotate(-5deg); }
+            75% { transform: translate(5px, 12px) rotate(3deg); }
+        }
+
+        @keyframes float3 {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(-12px, 5px) rotate(-3deg); }
+            50% { transform: translate(8px, -8px) rotate(3deg); }
+            75% { transform: translate(-5px, 10px) rotate(-2deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Generative Background -->
+    <div class="generative-bg" id="generativeBg"></div>
+
+    <!-- Auth Container -->
+    <div class="auth-container">
+        <div class="auth-header">
+            <div class="logo">°PLUS</div>
+            <p>Secure Authentication Portal</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <div class="tab active" data-tab="login">Login</div>
+            <div class="tab" data-tab="signup">Sign Up</div>
+            <div class="tab" data-tab="reset">Reset</div>
+        </div>
+
+        <!-- Status Message -->
+        <div id="statusMessage" class="status-message"></div>
+
+        <!-- Forms Container -->
+        <div class="form-container">
+            <!-- Login Form -->
+            <form id="loginForm" class="form active">
+                <div class="form-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" class="form-control" placeholder="your.email@example.com" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required>
+                </div>
+                
+                <button type="submit" class="btn">Login to Dashboard</button>
+            </form>
+
+            <!-- Signup Form -->
+            <form id="signupForm" class="form">
+                <div class="form-group">
+                    <label for="signupEmail">Email</label>
+                    <input type="email" id="signupEmail" class="form-control" placeholder="your.email@example.com" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="signupPassword">Password</label>
+                    <input type="password" id="signupPassword" class="form-control" placeholder="••••••••" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <input type="password" id="confirmPassword" class="form-control" placeholder="••••••••" required>
+                </div>
+                
+                <button type="submit" class="btn">Create Account</button>
+            </form>
+
+            <!-- Reset Password Form -->
+            <form id="resetForm" class="form">
+                <div class="form-group">
+                    <label for="resetEmail">Email</label>
+                    <input type="email" id="resetEmail" class="form-control" placeholder="your.email@example.com" required>
+                </div>
+                
+                <button type="submit" class="btn">Send Reset Link</button>
+            </form>
+        </div>
+
+        <div class="auth-footer">
+            <p>Securely accessing your °PLUS dashboard</p>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Supabase client
+        const SUPABASE_URL = 'https://mnhelayektorqnbbfixy.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1uaGVsYXlla3RvcnFuYmJmaXh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEzNzU3ODAsImV4cCI6MjA2Njk1MTc4MH0.ShTc8RTwDO_Q-aNKhEIalFqpU5fZixpjh69Jdn2hLfI';
+        
+        const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        // Generate dynamic background elements
+        function createGenerativeBackground() {
+            const container = document.getElementById('generativeBg');
+            
+            // Clear any existing elements
+            container.innerHTML = '';
+            
+            // Create grid lines
+            for (let i = 0; i < 20; i++) {
+                const line = document.createElement('div');
+                line.classList.add('grid-line');
+                
+                if (Math.random() > 0.5) {
+                    // Horizontal line
+                    line.style.top = `${Math.random() * 100}%`;
+                    line.style.left = '0';
+                    line.style.width = '100%';
+                    line.style.height = '1px';
+                } else {
+                    // Vertical line
+                    line.style.left = `${Math.random() * 100}%`;
+                    line.style.top = '0';
+                    line.style.height = '100%';
+                    line.style.width = '1px';
+                }
+                
+                container.appendChild(line);
+            }
+            
+            // Create grid dots
+            for (let i = 0; i < 150; i++) {
+                const dot = document.createElement('div');
+                dot.classList.add('grid-dot');
+                dot.style.left = `${Math.random() * 100}%`;
+                dot.style.top = `${Math.random() * 100}%`;
+                
+                // Random size
+                const size = 1 + Math.random() * 3;
+                dot.style.width = `${size}px`;
+                dot.style.height = `${size}px`;
+                
+                container.appendChild(dot);
+            }
+            
+            // Create floating shapes
+            for (let i = 0; i < 8; i++) {
+                const shape = document.createElement('div');
+                shape.classList.add('floating-shape');
+                
+                // Random position
+                shape.style.left = `${Math.random() * 100}%`;
+                shape.style.top = `${Math.random() * 100}%`;
+                
+                // Random size
+                const size = 100 + Math.random() * 300;
+                shape.style.width = `${size}px`;
+                shape.style.height = `${size}px`;
+                
+                // Random color
+                const colors = ['rgba(0, 243, 255, 0.1)', 'rgba(255, 0, 230, 0.1)', 'rgba(140, 0, 255, 0.1)'];
+                shape.style.background = colors[Math.floor(Math.random() * colors.length)];
+                
+                // Random animation
+                const animationType = Math.floor(Math.random() * 3) + 1;
+                shape.style.animation = `float${animationType} ${15 + Math.random() * 30}s infinite ease-in-out`;
+                
+                container.appendChild(shape);
+            }
+        }
+        
+        // Show status message
+        function showStatusMessage(message, type) {
+            const statusMessage = document.getElementById('statusMessage');
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message ${type}`;
+            statusMessage.style.display = "block";
+            
+            // Hide message after 5 seconds
+            setTimeout(() => {
+                statusMessage.style.display = "none";
+            }, 5000);
+        }
+        
+        // Switch between forms
+        function setupTabs() {
+            const tabs = document.querySelectorAll('.tab');
+            const forms = document.querySelectorAll('.form');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Remove active class from all tabs
+                    tabs.forEach(t => t.classList.remove('active'));
+                    
+                    // Add active class to clicked tab
+                    tab.classList.add('active');
+                    
+                    // Get target form
+                    const targetForm = tab.dataset.tab;
+                    
+                    // Hide all forms
+                    forms.forEach(form => {
+                        form.classList.remove('active');
+                        form.style.pointerEvents = 'none';
+                    });
+                    
+                    // Show target form
+                    document.getElementById(`${targetForm}Form`).classList.add('active');
+                    
+                    // Clear status message
+                    document.getElementById('statusMessage').style.display = "none";
+                });
+            });
+        }
+        
+        // Handle login
+        async function loginUser(email, password) {
+            const { data, error } = await client.auth.signInWithPassword({
+                email: email,
+                password: password
+            });
+            
+            if (error) {
+                showStatusMessage(`Login failed: ${error.message}`, 'error');
+                return null;
+            }
+            
+            showStatusMessage("Login successful! Redirecting...", 'success');
+            return data.user;
+        }
+        
+        // Handle signup
+        async function signupUser(email, password) {
+            const { data, error } = await client.auth.signUp({
+                email: email,
+                password: password
+            });
+            
+            if (error) {
+                showStatusMessage(`Signup failed: ${error.message}`, 'error');
+                return null;
+            }
+            
+            showStatusMessage("Account created! Please check your email for confirmation.", 'success');
+            return data.user;
+        }
+        
+        // Handle password reset
+        async function resetPassword(email) {
+            const { error } = await client.auth.resetPasswordForEmail(email);
+            
+            if (error) {
+                showStatusMessage(`Password reset failed: ${error.message}`, 'error');
+                return false;
+            }
+            
+            showStatusMessage("Password reset link sent to your email!", 'success');
+            return true;
+        }
+        
+        // Redirect to settings page
+        function redirectToSettings() {
+            setTimeout(() => {
+                window.location.href = "settings.html";
+            }, 1500);
+        }
+        
+        // Initialize everything when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            createGenerativeBackground();
+            setupTabs();
+            
+            // Add floating animations
+            const style = document.createElement('style');
+            style.innerHTML = `
+                @keyframes float1 {
+                    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+                    25% { transform: translate(-10px, -8px) rotate(-5deg); }
+                    50% { transform: translate(5px, 10px) rotate(5deg); }
+                    75% { transform: translate(8px, -5px) rotate(-3deg); }
+                }
+                
+                @keyframes float2 {
+                    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+                    25% { transform: translate(8px, -10px) rotate(5deg); }
+                    50% { transform: translate(-10px, 8px) rotate(-5deg); }
+                    75% { transform: translate(5px, 12px) rotate(3deg); }
+                }
+                
+                @keyframes float3 {
+                    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+                    25% { transform: translate(-12px, 5px) rotate(-3deg); }
+                    50% { transform: translate(8px, -8px) rotate(3deg); }
+                    75% { transform: translate(-5px, 10px) rotate(-2deg); }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // Form event listeners
+            document.getElementById('loginForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('loginEmail').value;
+                const password = document.getElementById('loginPassword').value;
+                
+                const user = await loginUser(email, password);
+                if (user) {
+                    redirectToSettings();
+                }
+            });
+            
+            document.getElementById('signupForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('signupEmail').value;
+                const password = document.getElementById('signupPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                
+                if (password !== confirmPassword) {
+                    showStatusMessage("Passwords do not match!", 'error');
+                    return;
+                }
+                
+                if (password.length < 6) {
+                    showStatusMessage("Password must be at least 6 characters", 'error');
+                    return;
+                }
+                
+                await signupUser(email, password);
+            });
+            
+            document.getElementById('resetForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('resetEmail').value;
+                await resetPassword(email);
+            });
+            
+            // Check if user is already logged in
+            client.auth.getSession().then(({ data: { session } }) => {
+                if (session) {
+                    showStatusMessage("You are already logged in. Redirecting...", 'success');
+                    redirectToSettings();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
