@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>°PLUS | Manage Posts</title>
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600&family=Orbitron:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary-light: #e6f7ff;
+            --secondary-light: #f0f9ff;
+            --primary: #5ebcff;
+            --text-primary: #1a3c5f;
+            --text-secondary: #4d7ba8;
+            --accent-1: #5ebcff;
+            --accent-2: #ff7eb6;
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glow: 0 0 15px rgba(94, 188, 255, 0.5);
+            --secondary: #ff7eb6;
+            --tertiary: #8c00ff;
+            --dark: #0a0a1a;
+            --darker: #050510;
+            --light: #e0e0ff;
+            --light-bg: rgba(224, 224, 255, 0.95);
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --glow-primary: 0 0 15px rgba(0, 243, 255, 0.3);
+            --glow-secondary: 0 0 15px rgba(255, 0, 230, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Exo 2', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--primary-light), var(--secondary-light));
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            padding-bottom: 80px;
+        }
+
+        /* Generative Background Elements */
+        .generative-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .grid-dot {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--secondary);
+            border-radius: 50%;
+            opacity: 0.3;
+        }
+
+        .floating-shape {
+            position: absolute;
+            opacity: 0.1;
+            border-radius: 50%;
+            filter: blur(20px);
+        }
+
+        /* Header Styles */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 0;
+            margin-bottom: 3rem;
+            border-bottom: 1px solid rgba(77, 123, 168, 0.2);
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 500;
+            background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 1px;
+            position: relative;
+        }
+
+        .logo::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+            border-radius: 3px;
+        }
+
+        nav ul {
+            display: flex;
+            gap: 1.5rem;
+            list-style: none;
+        }
+
+        nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            padding: 0.5rem .8rem;
+            border-radius: 30px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        nav a:hover {
+            color: var(--accent-1);
+            background: var(--glass-bg);
+        }
+        
+        nav a.active {
+            color: var(--accent-1);
+            background: var(--glass-bg);
+            box-shadow: var(--glow);
+        }
+
+        /* User Info */
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: 1rem;
+        }
+
+        .user-id {
+            font-size: 0.8rem;
+            background: rgba(0, 243, 255, 0.1);
+            padding: 0.3rem 0.6rem;
+            border-radius: 15px;
+            color: var(--secondary);
+            font-family: monospace;
+        }
+
+        /* Main Content */
+        .container {
+            max-width: 1400px;
+            margin: 3rem auto;
+            padding: 0 2rem;
+        }
+
+        .admin-panel {
+            background: var(--glass-bg);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 243, 255, 0.2);
+        }
+
+        .panel-title {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: var(--dark);
+            position: relative;
+            padding-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .panel-title span{
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            padding-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            background: linear-gradient(90deg, var(--text-primary), var(--accent-1));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .panel-title::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 2px;
+        }
+
+        /* Posts Table */
+        .posts-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+            background: var(--card-bg);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .posts-table th {
+            background: rgba(0, 243, 255, 0.1);
+            color: var(--dark);
+            text-align: left;
+            padding: 1rem;
+            font-weight: 600;
+        }
+
+        .posts-table td {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .posts-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .posts-table tr:hover {
+            background: rgba(0, 243, 255, 0.05);
+        }
+
+        .post-title-cell {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .post-category {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            background: rgba(255, 0, 230, 0.1);
+            color: var(--secondary);
+        }
+
+        .post-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+        }
+
+        .edit-btn {
+            background: rgba(0, 243, 255, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(0, 243, 255, 0.2);
+        }
+
+        .edit-btn:hover {
+            background: var(--primary);
+            color: white;
+            box-shadow: var(--glow-primary);
+        }
+
+        .delete-btn {
+            background: rgba(255, 100, 100, 0.1);
+            color: #ff5252;
+            border: 1px solid rgba(255, 100, 100, 0.2);
+        }
+
+        .delete-btn:hover {
+            background: #ff5252;
+            color: white;
+        }
+
+        /* Status Messages */
+        .status-message {
+            padding: 1rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .success {
+            background: rgba(0, 255, 170, 0.2);
+            color: #006644;
+            border: 1px solid rgba(0, 255, 170, 0.3);
+        }
+
+        .error {
+            background: rgba(255, 100, 100, 0.2);
+            color: #800000;
+            border: 1px solid rgba(255, 100, 100, 0.3);
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(0, 243, 255, 0.3);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        .fetch{
+            text-align: center;
+            padding: 3rem;
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+        }
+        .fetch::after {
+            content: '';
+            animation: fetch 1.5s infinite;
+        }
+        @keyframes fetch {
+            0% { content: '.'; }
+            33% { content: '..'; }
+            66% { content: '...'; }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: var(--glass-bg);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            padding: 2rem;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            max-height: 80vh;
+            overflow-y:auto;
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--dark);
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close-modal:hover {
+            color: var(--primary);
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            background: var(--glass-bg);
+            font-size: 1rem;
+            transition: all 0.3s;
+            color: var(--dark);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: var(--glow-primary);
+        }
+
+        textarea.form-control {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .btn {
+            padding: 0.8rem 2rem;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        /* Footer */
+        footer {
+            padding: 2rem 5%;
+            background: var(--glass-bg);
+            border-top: 1px solid rgba(0, 243, 255, 0.2);
+            text-align: center;
+            margin-top: 3rem;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+        }
+
+        .footer-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .footer-logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: inline-block;
+        }
+
+        .footer-text {
+            color: #666;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .copyright {
+            color: #888;
+            font-size: 0.85rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 900px) {
+            .posts-table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem 5%;
+            }
+            
+            nav ul {
+                gap: 0.8rem;
+                font-size: 0.9rem;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .posts-table th, 
+            .posts-table td {
+                padding: 0.75rem;
+                font-size: 0.9rem;
+            }
+            
+            .action-btn span {
+                display: none;
+            }
+            
+            .action-btn i {
+                margin-right: 0;
+            }
+            
+            .panel-title {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .panel-title::after {
+                width: 40px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 1rem;
+            }
+            
+            .admin-panel {
+                padding: 1.5rem;
+            }
+            
+            .form-group {
+                margin-bottom: 1rem;
+            }
+            
+            .btn {
+                padding: 0.7rem 1.5rem;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Generative Background -->
+    <div class="generative-bg" id="generativeBg"></div>
+
+    <header>
+        <div class="logo">°PLUS</div>
+        <nav>
+            <ul>
+                <li><a href="index.html">Explore</a></li>
+                <li><a href="create.html">Create</a></li>
+                <li><a href="#" class="active">Posts</a></li>
+                
+                <li><a href="settings.html">Settings</a></li>
+            </ul>
+        </nav>
+        <div class="user-info">
+            <div class="user-id" id="userIdDisplay">Loading user...</div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="admin-panel">
+            <h2 class="panel-title">
+                <span>Your Blog Posts</span>
+                <button class="btn" id="refreshBtn">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </h2>
+            
+            <div id="statusMessage" class="status-message" style="display: none;"></div>
+            
+            <div id="postsContainer">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p class="fetch">Fetching Your posts</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Post Modal -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <button class="close-modal" id="closeModal">&times;</button>
+            <h2 class="panel-title">Edit Blog Post</h2>
+            
+            <div id="editStatusMessage" class="status-message" style="display: none;"></div>
+            
+            <form id="editForm">
+                <input type="hidden" id="editPostId">
+                
+                <div class="form-group">
+                    <label for="editTitle">Title</label>
+                    <input type="text" id="editTitle" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editExcerpt">Excerpt</label>
+                    <textarea id="editExcerpt" class="form-control" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editContent">Content</label>
+                    <textarea id="editContent" class="form-control" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editCategory">Category</label>
+                    <select id="editCategory" class="form-control" required>
+                        <option value="Design">Design</option>
+                        <option value="Technology">Technology</option>
+                        <option value="AI">Artificial Intelligence</option>
+                        <option value="Development">Development</option>
+                        <option value="Science">Science</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editAuthor">Author</label>
+                    <input type="text" id="editAuthor" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editDate">Publish Date</label>
+                    <input type="date" id="editDate" class="form-control" required>
+                </div>
+                
+                <button type="submit" class="btn">
+                    <i class="fas fa-save"></i> Update Post
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">°PLUS</div>
+            <p class="copyright">© 2025 °PLUS. Securely managing your content.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Supabase client
+        const SUPABASE_URL = 'https://mnhelayektorqnbbfixy.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1uaGVsYXlla3RvcnFuYmJmaXh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEzNzU3ODAsImV4cCI6MjA2Njk1MTc4MH0.ShTc8RTwDO_Q-aNKhEIalFqpU5fZixpjh69Jdn2hLfI';
+        
+        const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        // Store posts and current user globally
+        let posts = [];
+        let currentUser = null;
+        
+        // Generate dynamic background elements
+        function createGenerativeBackground() {
+            const container = document.getElementById('generativeBg');
+            
+            // Create grid dots
+            for (let i = 0; i < 150; i++) {
+                const dot = document.createElement('div');
+                dot.classList.add('grid-dot');
+                dot.style.left = `${Math.random() * 100}%`;
+                dot.style.top = `${Math.random() * 100}%`;
+                
+                // Random size
+                const size = 1 + Math.random() * 3;
+                dot.style.width = `${size}px`;
+                dot.style.height = `${size}px`;
+                
+                container.appendChild(dot);
+            }
+            
+            // Create floating shapes
+            for (let i = 0; i < 5; i++) {
+                const shape = document.createElement('div');
+                shape.classList.add('floating-shape');
+                
+                // Random position
+                shape.style.left = `${Math.random() * 100}%`;
+                shape.style.top = `${Math.random() * 100}%`;
+                
+                // Random size
+                const size = 100 + Math.random() * 300;
+                shape.style.width = `${size}px`;
+                shape.style.height = `${size}px`;
+                
+                // Random color
+                const colors = ['rgba(0, 243, 255, 0.1)', 'rgba(255, 0, 230, 0.1)', 'rgba(140, 0, 255, 0.1)'];
+                shape.style.background = colors[Math.floor(Math.random() * colors.length)];
+                
+                // Random animation
+                shape.style.animation = `float${Math.floor(Math.random() * 3) + 1} ${15 + Math.random() * 30}s infinite ease-in-out`;
+                
+                container.appendChild(shape);
+            }
+        }
+        
+        // Get current authenticated user
+        async function getCurrentUser() {
+            try {
+                const { data: { user }, error } = await client.auth.getUser();
+                
+                if (error) throw error;
+                if (!user) {
+                    // Redirect to login if no user found
+                    window.location.href = "auth.html";
+                    return;
+                }
+                
+                currentUser = user;
+                document.getElementById('userIdDisplay').textContent = `User: ${user.email}`;
+                return user;
+                
+            } catch (error) {
+                console.error('Error getting current user:', error);
+                document.getElementById('userIdDisplay').textContent = 'Error loading user';
+                throw error;
+            }
+        }
+        
+        // Fetch blog posts for current user from Supabase
+        async function fetchBlogPosts() {
+            const container = document.getElementById('postsContainer');
+            container.innerHTML = `
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p class="fetch">Fetching Your posts</p>
+                </div>
+            `;
+            
+            try {
+                // First get the current user
+                const user = await getCurrentUser();
+                
+                // Fetch only posts belonging to this user
+                const { data, error } = await client
+                    .from('posts')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    throw error;
+                }
+                
+                // Store posts globally
+                posts = data || [];
+                
+                // Display the posts
+                displayBlogPosts(posts);
+                
+            } catch (error) {
+                console.error('Error fetching posts:', error);
+                container.innerHTML = `
+                    <div class="status-message error">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Failed to load posts. Please try again later.</p>
+                        <p><small>${error.message}</small></p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Display blog posts in table
+        function displayBlogPosts(posts) {
+            const container = document.getElementById('postsContainer');
+            
+            if (!posts || posts.length === 0) {
+                container.innerHTML = `
+                    <div class="status-message">
+                        <i class="fas fa-info-circle"></i>
+                        <p>No posts found. Create your first post!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let tableHTML = `
+                <table class="posts-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Category</th>
+                            <th>Author</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            posts.forEach(post => {
+                const date = new Date(post.date);
+                const formattedDate = date.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+                
+                tableHTML += `
+                    <tr data-id="${post.id}">
+                        <td class="post-title-cell">${post.title}</td>
+                        <td><span class="post-category">${post.category}</span></td>
+                        <td>${post.author}</td>
+                        <td>${formattedDate}</td>
+                        <td>
+                            <div class="post-actions">
+                                <button class="action-btn edit-btn" data-id="${post.id}">
+                                    <i class="fas fa-edit"></i> <span>Edit</span>
+                                </button>
+                                <button class="action-btn delete-btn" data-id="${post.id}">
+                                    <i class="fas fa-trash"></i> <span>Delete</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+            
+            container.innerHTML = tableHTML;
+            
+            // Attach event listeners to action buttons
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', () => openEditModal(btn.dataset.id));
+            });
+            
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', () => deletePost(btn.dataset.id));
+            });
+        }
+        
+        // Open edit modal
+        async function openEditModal(postId) {
+            try {
+                // Find the post in our global posts array
+                const post = posts.find(p => p.id == postId);
+                
+                if (post) {
+                    document.getElementById('editPostId').value = post.id;
+                    document.getElementById('editTitle').value = post.title;
+                    document.getElementById('editExcerpt').value = post.excerpt;
+                    document.getElementById('editContent').value = post.content;
+                    document.getElementById('editCategory').value = post.category;
+                    document.getElementById('editAuthor').value = post.author;
+                    
+                    // Format date for input field
+                    const date = new Date(post.date);
+                    const formattedDate = date.toISOString().split('T')[0];
+                    document.getElementById('editDate').value = formattedDate;
+                    
+                    document.getElementById('editModal').style.display = 'flex';
+                } else {
+                    throw new Error('Post not found');
+                }
+            } catch (error) {
+                console.error('Error opening edit modal:', error);
+                alert('Failed to load post for editing.');
+            }
+        }
+        
+        // Delete post
+        async function deletePost(postId) {
+            if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+                return;
+            }
+            
+            const statusMessage = document.getElementById('statusMessage');
+            statusMessage.textContent = "Deleting post...";
+            statusMessage.className = "status-message";
+            statusMessage.style.display = "block";
+            
+            try {
+                // First verify the post belongs to current user
+                const user = await getCurrentUser();
+                const post = posts.find(p => p.id == postId);
+                
+                if (!post || post.user_id !== user.id) {
+                    throw new Error('You can only delete your own posts');
+                }
+                
+                // Delete from Supabase
+                const { error } = await client.from('posts').delete().eq('id', postId);
+                
+                if (error) throw error;
+                
+                // Remove from UI
+                document.querySelector(`tr[data-id="${postId}"]`).remove();
+                
+                statusMessage.textContent = "✅ Post deleted successfully!";
+                statusMessage.className = "status-message success";
+                
+                // Hide message after 3 seconds
+                setTimeout(() => {
+                    statusMessage.style.display = "none";
+                }, 3000);
+                
+            } catch (error) {
+                console.error('Error deleting post:', error);
+                statusMessage.textContent = `❌ Error: ${error.message}`;
+                statusMessage.className = "status-message error";
+            }
+        }
+        
+        // Update post
+        async function updatePost(e) {
+            e.preventDefault();
+            
+            const postId = document.getElementById('editPostId').value;
+            const title = document.getElementById('editTitle').value;
+            const excerpt = document.getElementById('editExcerpt').value;
+            const content = document.getElementById('editContent').value;
+            const category = document.getElementById('editCategory').value;
+            const author = document.getElementById('editAuthor').value;
+            const date = document.getElementById('editDate').value;
+            
+            const statusMessage = document.getElementById('editStatusMessage');
+            statusMessage.textContent = "Updating post...";
+            statusMessage.className = "status-message";
+            statusMessage.style.display = "block";
+            
+            try {
+                // First verify the post belongs to current user
+                const user = await getCurrentUser();
+                const post = posts.find(p => p.id == postId);
+                
+                if (!post || post.user_id !== user.id) {
+                    throw new Error('You can only edit your own posts');
+                }
+                
+                // Update in Supabase
+                const { data, error } = await client.from('posts')
+                    .update({ title, excerpt, content, category, author, date })
+                    .eq('id', postId);
+                
+                if (error) throw error;
+                
+                statusMessage.textContent = "✅ Post updated successfully!";
+                statusMessage.className = "status-message success";
+                
+                // Update the UI
+                const row = document.querySelector(`tr[data-id="${postId}"]`);
+                if (row) {
+                    row.querySelector('.post-title-cell').textContent = title;
+                    row.querySelector('.post-category').textContent = category;
+                    row.querySelector('td:nth-child(3)').textContent = author;
+                    
+                    const formattedDate = new Date(date).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric' 
+                    });
+                    row.querySelector('td:nth-child(4)').textContent = formattedDate;
+                }
+                
+                // Close modal after 1.5 seconds
+                setTimeout(() => {
+                    document.getElementById('editModal').style.display = 'none';
+                    statusMessage.style.display = "none";
+                }, 1500);
+                
+            } catch (error) {
+                console.error('Error updating post:', error);
+                statusMessage.textContent = `❌ Error: ${error.message}`;
+                statusMessage.className = "status-message error";
+            }
+        }
+        
+        // Initialize everything when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            createGenerativeBackground();
+            fetchBlogPosts();
+            
+            // Add floating animations
+            const style = document.createElement('style');
+            style.innerHTML = `
+                @keyframes float1 {
+                    0%, 100% { transform: translate(0, 0); }
+                    25% { transform: translate(-10px, -8px); }
+                    50% { transform: translate(5px, 10px); }
+                    75% { transform: translate(8px, -5px); }
+                }
+                
+                @keyframes float2 {
+                    0%, 100% { transform: translate(0, 0); }
+                    25% { transform: translate(8px, -10px); }
+                    50% { transform: translate(-10px, 8px); }
+                    75% { transform: translate(5px, 12px); }
+                }
+                
+                @keyframes float3 {
+                    0%, 100% { transform: translate(0, 0); }
+                    25% { transform: translate(-12px, 5px); }
+                    50% { transform: translate(8px, -8px); }
+                    75% { transform: translate(-5px, 10px); }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // Event listeners
+            document.getElementById('refreshBtn').addEventListener('click', fetchBlogPosts);
+            document.getElementById('closeModal').addEventListener('click', () => {
+                document.getElementById('editModal').style.display = 'none';
+            });
+            
+            document.getElementById('editForm').addEventListener('submit', updatePost);
+            
+            // Close modal when clicking outside
+            window.addEventListener('click', (e) => {
+                if (e.target === document.getElementById('editModal')) {
+                    document.getElementById('editModal').style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
