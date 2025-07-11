@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>°PLUS | Admin Portal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600&family=Orbitron:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary-light: #e6f7ff;
+            --secondary-light: #f0f9ff;
+            --primary: #5ebcff;
+            --secondary: #ff7eb6;
+            --tertiary: #8c00ff;
+            --dark: #0a0a1a;
+            --darker: #050510;
+            --light: #e0e0ff;
+            --light-bg: rgba(224, 224, 255, 0.95);
+            --text-primary: #1a3c5f;
+            --text-secondary: #4d7ba8;
+            --accent-1: #5ebcff;
+            --accent-2: #ff7eb6;
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glow: 0 0 15px rgba(94, 188, 255, 0.5);
+            --glow-primary: 0 0 15px rgba(0, 243, 255, 0.3);
+            --glow-secondary: 0 0 15px rgba(255, 0, 230, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Exo 2', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--primary-light), var(--secondary-light));
+            color: var(--text-secondary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            
+        }
+
+        /* Generative Background Elements */
+        .generative-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .grid-dot {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--secondary);
+            border-radius: 50%;
+            opacity: 0.3;
+        }
+
+        .floating-shape {
+            position: absolute;
+            opacity: 0.1;
+            border-radius: 50%;
+            filter: blur(20px);
+        }
+
+        /* Header Styles */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid rgba(77, 123, 168, 0.2);
+            background: var(--glass-bg);
+            backdrop-filter: blur(1px);
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            font-weight: 500;
+            background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 1px;
+            position: relative;
+        }
+
+        .logo::after {
+            content: "";
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            border-radius: 3px;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        nav a {
+           color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        nav a:hover {
+            color: var(--accent-1);
+            background: var(--glass-bg);
+        }
+        
+        nav a.active {
+            color: var(--accent-1);
+            background: var(--glass-bg);
+            box-shadow: var(--glow);
+        }
+        
+        .user-info {
+        
+            display: none;
+            align-items: center;
+            gap: 10px;
+            background: var(--glass-bg);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            margin-left: 2rem;
+        }
+        
+        .user-info span {
+        
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        
+        .user-id {
+            
+            font-size: 0.6rem;
+            background: rgba(0, 243, 255, 0.1);
+            padding: 0.2rem 0.5rem;
+            border-radius: 10px;
+            color: var(--secondary);
+        }
+
+        /* Main Content */
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+            display: flex;
+        }
+
+        .admin-panel {
+            flex: 1;
+            background: var(--glass-bg);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            margin-bottom: 10px;
+            backdrop-filter: blur(3px);
+            border: 1px solid rgba(0, 243, 255, 0.2);
+        }
+
+        .panel-title {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-secondary);
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+
+        .panel-title::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 2px;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(5px);
+            font-size: .8rem;
+            transition: all 0.3s;
+            color: var(--text-primary);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: var(--glow-primary);
+        }
+
+        textarea.form-control {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .btn {
+            padding: 0.8rem 2rem;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: .8rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        /* Preview Panel */
+        .preview-panel {
+            flex: 1;
+            background: var(--glass-bg);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            margin-left: 10px;
+            backdrop-filter: blur(3px);
+            border: 1px solid rgba(0, 243, 255, 0.2);
+        }
+
+        .preview-title {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .preview-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 243, 255, 0.1);
+        }
+
+        .preview-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            font-size: 0.7rem;
+            color: var(--secondary);
+        }
+
+        .preview-content {
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .preview-content h3 {
+            margin: 1rem 0 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .preview-content p {
+            margin-bottom: 1rem;
+        }
+        
+        .category {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.6rem;
+            font-weight: 500;
+            background: rgba(255, 0, 230, 0.1);
+            color: var(--secondary);
+        }
+        
+        /* Status Messages */
+        .status-message {
+            padding: 1rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .success {
+            background: rgba(0, 255, 170, 0.2);
+            color: #006644;
+            border: 1px solid rgba(0, 255, 170, 0.3);
+        }
+
+        .error {
+            background: rgba(255, 100, 100, 0.2);
+            color: #800000;
+            border: 1px solid rgba(255, 100, 100, 0.3);
+        }
+
+        /* Footer */
+        footer {
+            padding: 1rem;
+            backdrop-filter: blur(2px);
+            border-top: 1px solid rgba(0, 243, 255, 0.2);
+            text-align: center;
+            margin-top: 3rem;
+            width: 100%;
+        }
+
+        .footer-logo {
+            font-size: .8rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: inline-block;
+        }
+
+        .copyright {
+            color: #888;
+            font-size: 0.7rem;
+        }
+        
+        /* User ID Indicator */
+        .user-id-indicator {
+            display: inline-block;
+            background: rgba(0, 243, 255, 0.1);
+            color: var(--secondary);
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.6rem;
+            margin-top: 0.5rem;
+            font-family: monospace;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 900px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .preview-panel {
+                margin-left: 0;
+                margin-top: 2rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            nav ul {
+                gap: 1rem;
+            }
+            
+            header {
+                flex-direction: column;
+                gap: 1.5rem;
+                padding: 1rem;
+            }
+            
+            .user-info {
+                margin-left: 0;
+                margin-top: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Generative Background -->
+    <div class="generative-bg" id="generativeBg"></div>
+
+    <header>
+        <div class="logo">°PLUS</div>
+        <nav>
+            <ul>
+                <li><a href="index.html">Explore</a></li>
+                <li><a href="#" class="active">Create</a></li>
+                <li><a href="post.html">Posts</a></li>
+                <li><a href="settings.html">Settings</a></li>
+            </ul>
+        </nav>
+        <div class="user-info" >
+            <i class="fas fa-user"></i>
+            <span id="username"></span>
+            <div class="user-id" id="userIdDisplay">user_id</div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="admin-panel">
+            <h2 class="panel-title">Create New Blog Post</h2>
+            <div class="user-id-indicator" style="display:none">Your User ID: <span id="currentUserId">loading...</span></div>
+            
+            <form id="blogForm">
+                <div class="form-group">
+                    <label for="postTitle">Title</label>
+                    <input type="text" id="postTitle" class="form-control" placeholder="Enter post title" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="postExcerpt">Excerpt</label>
+                    <textarea id="postExcerpt" class="form-control" placeholder="Enter a short excerpt" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="postContent">Content</label>
+                    <textarea id="postContent" class="form-control" placeholder="Enter full content" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="postCategory">Category</label>
+                    <select id="postCategory" class="form-control" required>
+                        <option value="">Select a category</option>
+                        <option value="Design">Design</option>
+                        <option value="Technology">Technology</option>
+                        <option value="AI">Artificial Intelligence</option>
+                        <option value="Development">Development</option>
+                        <option value="Science">Science</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="postAuthor">Author</label>
+                    <input type="text" id="postAuthor" class="form-control" placeholder="Author name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="postDate">Publish Date</label>
+                    <input type="date" id="postDate" class="form-control" required>
+                </div>
+                
+                <button type="submit" class="btn">
+                    <i class="fas fa-cloud-upload-alt"></i> Publish to Supabase
+                </button>
+            </form>
+            <div id="statusMessage" class="status-message" style="display: none;"></div>
+        </div>
+        
+        <div class="preview-panel">
+            <h2 class="panel-title">Post Preview</h2>
+            <p>See how your post will appear to readers</p>
+            
+            <div class="preview-card">
+                <div class="preview-meta">
+                    <span id="previewCategory" class="category">Design</span>
+                    <span id="previewAuthor">Admin</span>
+                </div>
+                <div style="margin-top: 1rem; color: var(--secondary); font-weight: 500;">
+                   <span id="previewDate">October 25, 2023</span>
+                </div>
+                <h3 id="previewTitle">Your Blog Title Here</h3>
+                <div class="preview-content">
+                    <p id="previewExcerpt">This is a preview of your blog post excerpt. It will show here once you start typing.</p>
+                    <div id="previewContent">The full content of your blog post will appear in this section.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">°PLUS</div>
+           <p>°PLUS Blog &copy; 2025 | Developed by Moonhill</p>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Supabase client
+        const SUPABASE_URL = 'https://mnhelayektorqnbbfixy.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1uaGVsYXlla3RvcnFuYmJmaXh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEzNzU3ODAsImV4cCI6MjA2Njk1MTc4MH0.ShTc8RTwDO_Q-aNKhEIalFqpU5fZixpjh69Jdn2hLfI';
+        
+        const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        // Global user object
+        let currentUser = null;
+        
+        // Generate dynamic background elements
+        function createGenerativeBackground() {
+            const container = document.getElementById('generativeBg');
+            
+            // Create grid dots
+            for (let i = 0; i < 150; i++) {
+                const dot = document.createElement('div');
+                dot.classList.add('grid-dot');
+                dot.style.left = `${Math.random() * 100}%`;
+                dot.style.top = `${Math.random() * 100}%`;
+                
+                // Random size
+                const size = 1 + Math.random() * 3;
+                dot.style.width = `${size}px`;
+                dot.style.height = `${size}px`;
+                
+                container.appendChild(dot);
+            }
+            
+            // Create floating shapes
+            for (let i = 0; i < 5; i++) {
+                const shape = document.createElement('div');
+                shape.classList.add('floating-shape');
+                
+                // Random position
+                shape.style.left = `${Math.random() * 100}%`;
+                shape.style.top = `${Math.random() * 100}%`;
+                
+                // Random size
+                const size = 100 + Math.random() * 300;
+                shape.style.width = `${size}px`;
+                shape.style.height = `${size}px`;
+                
+                // Random color
+                const colors = ['rgba(0, 243, 255, 0.1)', 'rgba(255, 0, 230, 0.1)', 'rgba(140, 0, 255, 0.1)'];
+                shape.style.background = colors[Math.floor(Math.random() * colors.length)];
+                
+                // Random animation
+                shape.style.animation = `float${Math.floor(Math.random() * 3) + 1} ${15 + Math.random() * 30}s infinite ease-in-out`;
+                
+                container.appendChild(shape);
+            }
+        }
+        
+        // Fetch authenticated user
+        async function fetchCurrentUser() {
+            try {
+                const { data: { user }, error } = await client.auth.getUser();
+                
+                if (error) throw error;
+                if (!user) {
+                    // Redirect to login if no user found
+                    window.location.href = "log.html";
+                    return;
+                }
+                
+                currentUser = user;
+                populateUserInfo(user);
+                
+                // Update user ID display
+                document.getElementById('currentUserId').textContent = user.id;
+                document.getElementById('userIdDisplay').textContent = user.id.substring(0, 8) + '...';
+                
+            } catch (error) {
+                console.error('Error fetching user:', error);
+                showStatus(`Error: ${error.message}`, false);
+            }
+        }
+        
+        // Update preview in real-time
+        function setupPreview() {
+            const titleInput = document.getElementById('postTitle');
+            const excerptInput = document.getElementById('postExcerpt');
+            const contentInput = document.getElementById('postContent');
+            const categoryInput = document.getElementById('postCategory');
+            const authorInput = document.getElementById('postAuthor');
+            const dateInput = document.getElementById('postDate');
+            
+            // Set today's date as default
+            const today = new Date();
+            dateInput.valueAsDate = today;
+            updateDatePreview(today);
+            
+            // Add event listeners for real-time preview
+            titleInput.addEventListener('input', () => {
+                document.getElementById('previewTitle').textContent = titleInput.value || 'Your Blog Title Here';
+            });
+            
+            excerptInput.addEventListener('input', () => {
+                document.getElementById('previewExcerpt').textContent = excerptInput.value || 'This is a preview of your blog post excerpt. It will show here once you start typing.';
+            });
+            
+            contentInput.addEventListener('input', () => {
+                document.getElementById('previewContent').textContent = contentInput.value || 'The full content of your blog post will appear in this section.';
+            });
+            
+            categoryInput.addEventListener('change', () => {
+                document.getElementById('previewCategory').textContent = categoryInput.value || 'Design';
+            });
+            
+            authorInput.addEventListener('input', () => {
+                document.getElementById('previewAuthor').textContent = authorInput.value || 'Admin';
+            });
+            
+            dateInput.addEventListener('change', () => {
+                updateDatePreview(dateInput.valueAsDate);
+            });
+        }
+        
+        function updateDatePreview(date) {
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('previewDate').textContent = date.toLocaleDateString('en-US', options);
+        }
+        
+        // Handle form submission
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            // Get form values
+            const title = document.getElementById('postTitle').value;
+            const excerpt = document.getElementById('postExcerpt').value;
+            const content = document.getElementById('postContent').value;
+            const category = document.getElementById('postCategory').value;
+            const author = document.getElementById('postAuthor').value;
+            const date = document.getElementById('postDate').value;
+            
+            // Validate user is authenticated
+            if (!currentUser) {
+                showStatus("❌ Error: User not authenticated. Please log in again.", false);
+                return;
+            }
+            
+            // Show loading state
+            const statusMessage = document.getElementById('statusMessage');
+            statusMessage.textContent = "Publishing post to Supabase...";
+            statusMessage.className = "status-message";
+            statusMessage.style.display = "block";
+            
+            try {
+                // Insert into Supabase with user_id
+                const { data, error } = await client
+                    .from('posts')
+                    .insert([
+                        { 
+                            title, 
+                            excerpt, 
+                            content, 
+                            category, 
+                            author, 
+                            date,
+                            created_at: new Date().toISOString(),
+                            user_id: currentUser.id  // Add the user ID here
+                        }
+                    ]);
+                
+                if (error) throw error;
+                
+                // Show success message
+                statusMessage.textContent = "✅ Post published successfully to Supabase!";
+                statusMessage.className = "status-message success";
+                
+                // Clear form
+                document.getElementById('blogForm').reset();
+                
+                // Reset preview
+                document.getElementById('previewTitle').textContent = 'Your Blog Title Here';
+                document.getElementById('previewExcerpt').textContent = 'This is a preview of your blog post excerpt. It will show here once you start typing.';
+                document.getElementById('previewContent').textContent = 'The full content of your blog post will appear in this section.';
+                document.getElementById('previewCategory').textContent = 'Design';
+                document.getElementById('previewAuthor').textContent = 'Admin';
+                
+                // Set today's date as default
+                const today = new Date();
+                document.getElementById('postDate').valueAsDate = today;
+                updateDatePreview(today);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                statusMessage.textContent = `❌ Error: ${error.message}`;
+                statusMessage.className = "status-message error";
+            }
+            
+            // Hide message after 5 seconds
+            setTimeout(() => {
+                statusMessage.style.display = "none";
+            }, 5000);
+        }
+        
+        // Populate user information
+        function populateUserInfo(user) {
+            const name = user.user_metadata?.full_name || user.email.split('@')[0];
+            const initials = name.split(' ').map(n => n[0]).join('').toUpperCase();
+            
+            document.getElementById('username').textContent = name;
+            
+            // Set display name if available
+            if (user.user_metadata?.full_name) {
+                document.getElementById('postAuthor').value = user.user_metadata.full_name;
+            }
+        }
+        
+        // Initialize everything when page loads
+        document.addEventListener('DOMContentLoaded', async () => {
+            createGenerativeBackground();
+            setupPreview();
+            
+            await fetchCurrentUser();
+            
+            // Add floating animations
+            const style = document.createElement('style');
+            style.innerHTML = `
+                @keyframes float1 {
+                    0%, 100% { transform: translate(0, 0); }
+                    25% { transform: translate(-10px, -8px); }
+                    50% { transform: translate(5px, 10px); }
+                    75% { transform: translate(8px, -5px); }
+                }
+                
+                @keyframes float2 {
+                    0%, 100% { transform: translate(0, 0); }
+                    25% { transform: translate(8px, -10px); }
+                    50% { transform: translate(-10px, 8px); }
+                    75% { transform: translate(5px, 12px); }
+                }
+                
+                @keyframes float3 {
+                    0%, 100% { transform: translate(0, 0); }
+                    25% { transform: translate(-12px, 5px); }
+                    50% { transform: translate(8px, -8px); }
+                    75% { transform: translate(-5px, 10px); }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // Form submission handler
+            document.getElementById('blogForm').addEventListener('submit', handleFormSubmit);
+        });
+    </script>
+</body>
+</html>

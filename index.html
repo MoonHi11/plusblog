@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>°PLUS | Futuristic Blog</title>
+     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600&family=Orbitron:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <style>
+        :root {
+            --primary-light: #e6f7ff;
+            --secondary-light: #f0f9ff;
+            --accent-1: #5ebcff;
+            --accent-2: #ff7eb6;
+            --text-primary: #1a3c5f;
+            --text-secondary: #4d7ba8;
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glow: 0 0 15px rgba(94, 188, 255, 0.5);
+            --modal-bg: rgba(255, 255, 255, 0.95);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html{
+            margin:.4rem;
+        }
+        body {
+            font-family: 'Exo 2', sans-serif;
+            background: linear-gradient(135deg, var(--primary-light), var(--secondary-light));
+            color: var(--text-primary);
+            min-height: 100vh;
+            margin: 1rem;
+            overflow-x: hidden;
+            transition: filter 0.4s ease;
+        }
+
+        .generative-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+        .grid-dot {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--primary);
+            border-radius: 50%;
+            opacity: 0.3;
+        }
+        .floating-shape {
+            position: absolute;
+            opacity: 0.1;
+            border-radius: 50%;
+            filter: blur(20px);
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem .5rem;
+            margin-bottom: 3rem;
+            margin: 1rem;
+            border-bottom: 1px solid rgba(77, 123, 168, 0.2);
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            font-weight: 500;
+            background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 1px;
+            position: relative;
+        }
+
+        .logo::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+            border-radius: 3px;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 1.5rem;
+        }
+
+        nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            padding: 0.5rem .7rem;
+            border-radius: 30px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        nav a:hover {
+            color: var(--accent-1);
+            background: var(--glass-bg);
+        }
+
+        nav a.active {
+            color: var(--accent-1);
+            background: var(--glass-bg);
+            box-shadow: var(--glow);
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 4rem;
+            padding: 3rem 0;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: var(--glow);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(94, 188, 255, 0.1), transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            background: linear-gradient(90deg, var(--text-primary), var(--accent-1));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1rem;
+            max-width: 700px;
+            margin: 0 auto 2rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .generated-layout {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2.5rem;
+            margin-bottom: 3rem;
+        }
+        
+        .blog-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            transform: translateY(0);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+        }
+
+        .blog-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(94, 188, 255, 0.25);
+        }
+
+        .card-pattern {
+            height: 180px;
+            background: linear-gradient(120deg, var(--accent-1), var(--accent-2));
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-content {
+            padding: 1.8rem;
+        }
+
+        .blog-date {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .blog-date::before {
+            content: '🕒';
+            margin-right: 8px;
+        }
+
+        .blog-title {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.3;
+        }
+
+        .blog-excerpt {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .read-more {
+            display: inline-block;
+            padding: 0.8rem 1.8rem;
+            background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+            color: white;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(94, 188, 255, 0.3);
+        }
+
+        .read-more:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(94, 188, 255, 0.5);
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            margin: 3rem 0;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .db-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #4caf50;
+            box-shadow: 0 0 10px #4caf50;
+        }
+
+        .status-text {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .post-count {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: var(--text-secondary);
+            font-size: 0.7rem;
+            margin-top: 3rem;
+            border-top: 1px solid rgba(77, 123, 168, 0.2);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .loading::after {
+            content: '';
+            animation: loading 1.5s infinite;
+        }
+        @keyframes loading {
+            0% { content: '.'; }
+            33% { content: '..'; }
+            66% { content: '...'; }
+        }
+        /* Lightbox Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--modal-bg);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            overflow-y: auto;
+            
+        }
+
+        .modal-content {
+            z-index: 1000;
+            overflow-y: auto;
+            max-height: 100vh;
+            width: 100%;
+            margin: 0 auto;
+            background: var(--modal-bg);
+            border-radius: 0px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+            position: relative;
+            animation: modalOpen 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes modalOpen {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            padding: 2rem;
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+            position: relative;
+            overflow: hidden;
+        }
+
+        .modal-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,0 L100,0 L100,100 Z" fill="rgba(255,255,255,0.1)"/></svg>');
+            background-size: cover;
+            opacity: 0.3;
+        }
+
+        .modal-title {
+            font-size: 2.5rem;
+            color: white;
+            margin-bottom: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .modal-meta {
+            display: flex;
+            gap: 1.5rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .modal-image {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .modal-body {
+            padding: 2.5rem;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .modal-body p {
+            margin-bottom: 1.5rem;
+            line-height: 1.8;
+            color: var(--text-secondary);
+        }
+
+        .modal-body h2, .modal-body h3 {
+            margin: 2rem 0 1rem;
+            color: var(--text-primary);
+        }
+
+        .modal-footer {
+            padding: 1.5rem 2.5rem;
+            background: var(--glass-bg);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-category {
+            background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+            color: white;
+            padding: 0.5rem 1.2rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .back-button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0.8rem 1.8rem;
+            background: var(--card-bg);
+            color: var(--text-primary);
+            border: none;
+            position: sticky;
+            border-radius: 30px;
+            font-family: 'Exo 2', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .back-button:hover {
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(94, 188, 255, 0.2);
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            width: 30px;
+            height: 30px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .close-modal:hover {
+            transform: rotate(90deg);
+            background: var(--accent-1);
+            color: white;
+        }
+
+        .close-modal::before, .close-modal::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 2px;
+            background: var(--text-primary);
+        }
+
+        .close-modal::before {
+            transform: rotate(45deg);
+        }
+
+        .close-modal::after {
+            transform: rotate(-45deg);
+        }
+
+        .close-modal:hover::before, .close-modal:hover::after {
+            background: white;
+        }
+
+        /* Blur effect for background when modal is open */
+        body.modal-open {
+            overflow: hidden;
+        }
+
+        body.modal-open .container {
+            filter: blur(8px);
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .hero p {
+                font-size: 1.1rem;
+            }
+            
+            .generated-layout {
+                grid-template-columns: 1fr;
+            }
+            
+            nav ul {
+                gap: 1rem;
+            }
+            
+            header {
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+
+            .modal-content {
+                margin: 0rem;
+                overflow-y: auto;
+            max-height: 100vh;
+            }
+
+            .modal-header {
+                padding: 1.5rem;
+                
+            }
+
+            .modal-title {
+                font-size: 1.8rem;
+            }
+
+            .modal-body {
+                padding: 1.5rem;
+            }
+
+            .modal-image {
+                height: 250px;
+            }
+
+            .modal-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .modal-footer {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="generative-bg" id="generativeBg"></div>
+    
+    <div class="container">
+        <header>
+            <div class="logo">°PLUS</div>
+            <nav>
+                <ul>
+                    <li><a href="#" class="active">Explore</a></li>
+                    <li><a href="create.html">Create</a></li>
+                    <li><a href="settings.html">Settings</a></li>
+                    <li><a href="log.html">Login</a></li>
+                </ul>
+            </nav>
+        </header>
+        
+        <section class="hero">
+            <h1>Algorithmic Content Creation</h1>
+            <p>Experience the future of digital publishing with dynamically generated layouts and AI-enhanced content delivery</p>
+        </section>
+        
+        <div class="status-bar">
+            <div class="db-status">
+                <div class="status-indicator"></div>
+                <div class="status-text">Connected to Supabase</div>
+            </div>
+            <div class="post-count">Loading posts...</div>
+        </div>
+        
+        <div class="generated-layout" id="blogContainer">
+            <div class="loading">Fetching content</div>
+        </div>
+        
+        <footer>
+            <p>°PLUS Blog &copy; 2025 | Developed by Moonhill</p>
+        </footer>
+    </div>
+    
+    <!-- Lightbox Modal -->
+    <div id="postModal" class="modal">
+        <div class="modal-content">
+            <div class="close-modal"></div>
+            <div class="modal-header">
+                <h1 class="modal-title" id="modalTitle"></h1>
+                <div class="modal-meta">
+                    <span id="modalDate"></span>
+                    <span id="modalAuthor">Written by °PLUS </span>
+                </div>
+            </div>
+            <img id="modalImage" class="modal-image" src="" alt="Featured image">
+            <div class="modal-body" id="modalContent"></div>
+            <div class="modal-footer">
+                <div class="modal-category" id="modalCategory"></div>
+                <button class="back-button" id="backButton">
+                    <span>&larr;</span> Back to Articles
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Supabase client
+        const supabaseUrl = 'https://mnhelayektorqnbbfixy.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1uaGVsYXlla3RvcnFuYmJmaXh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEzNzU3ODAsImV4cCI6MjA2Njk1MTc4MH0.ShTc8RTwDO_Q-aNKhEIalFqpU5fZixpjh69Jdn2hLfI';
+        const client = supabase.createClient(supabaseUrl, supabaseKey);
+        
+        // DOM Elements
+        const modal = document.getElementById('postModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalDate = document.getElementById('modalDate');
+        const modalImage = document.getElementById('modalImage');
+        const modalContent = document.getElementById('modalContent');
+        const modalCategory = document.getElementById('modalCategory');
+        const backButton = document.getElementById('backButton');
+        const closeModal = document.querySelector('.close-modal');
+        
+        // Generate dynamic background elements
+        function createGenerativeBackground() {
+            const container = document.getElementById('generativeBg');
+            
+            // Create grid dots
+            for (let i = 0; i < 150; i++) {
+                const dot = document.createElement('div');
+                dot.classList.add('grid-dot');
+                dot.style.left = `${Math.random() * 100}%`;
+                dot.style.top = `${Math.random() * 100}%`;
+                
+                // Random size
+                const size = 1 + Math.random() * 3;
+                dot.style.width = `${size}px`;
+                dot.style.height = `${size}px`;
+                
+                container.appendChild(dot);
+            }
+            
+            // Create floating shapes
+            for (let i = 0; i < 5; i++) {
+                const shape = document.createElement('div');
+                shape.classList.add('floating-shape');
+                
+                // Random position
+                shape.style.left = `${Math.random() * 100}%`;
+                shape.style.top = `${Math.random() * 100}%`;
+                
+                // Random size
+                const size = 100 + Math.random() * 300;
+                shape.style.width = `${size}px`;
+                shape.style.height = `${size}px`;
+                
+                // Random color
+                const colors = ['rgba(0, 243, 255, 0.1)', 'rgba(255, 0, 230, 0.1)', 'rgba(140, 0, 255, 0.1)'];
+                shape.style.background = colors[Math.floor(Math.random() * colors.length)];
+                
+                // Random animation
+                shape.style.animation = `float${Math.floor(Math.random() * 3) + 1} ${15 + Math.random() * 30}s infinite ease-in-out`;
+                
+                container.appendChild(shape);
+            }
+        }
+        
+        // Function to generate unique card patterns
+        function generateCardPattern() {
+            return {
+                angle: Math.floor(Math.random() * 360),
+                colors: [
+                    `hsl(${Math.floor(Math.random() * 360)}, 70%, 70%)`,
+                    `hsl(${Math.floor(Math.random() * 360)}, 70%, 70%)`
+                ]
+            };
+        }
+        
+        // Function to fetch blog data from Supabase
+        async function fetchBlogs() {
+            try {
+                const { data, error } = await client
+                    .from('posts')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(6);
+                
+                if (error) throw error;
+                
+                return data;
+            } catch (error) {
+                console.error('Error fetching blogs:', error);
+                return [];
+            }
+        }
+        
+        // Function to render blog cards with generative designs
+        async function renderBlogs() {
+            const blogContainer = document.getElementById('blogContainer');
+            blogContainer.innerHTML = '<div class="loading">Generating layout</div>';
+            
+            const blogs = await fetchBlogs();
+            
+            if (blogs.length === 0) {
+                blogContainer.innerHTML = '<div class="loading">No posts found. Try again later.</div>';
+                return;
+            }
+            
+            // Update post count
+            document.querySelector('.post-count').textContent = `${blogs.length} posts loaded`;
+            
+            // Clear container
+            blogContainer.innerHTML = '';
+            
+            // Create and append blog cards
+            blogs.forEach(blog => {
+                const pattern = generateCardPattern();
+                
+                const card = document.createElement('article');
+                card.className = 'blog-card';
+                card.dataset.id = blog.id;
+                
+                card.innerHTML = `
+                    <div class="card-pattern" style="
+                        background: linear-gradient(${pattern.angle}deg, ${pattern.colors[0]}, ${pattern.colors[1]});
+                    "></div>
+                    <div class="card-content">
+                        <div class="blog-date">${new Date(blog.created_at).toLocaleDateString()}</div>
+                        <h2 class="blog-title">${blog.title}</h2>
+                        <p class="blog-excerpt">${blog.excerpt || blog.content.substring(0, 150)}...</p>
+                        <a href="#" class="read-more">Read Article</a>
+                    </div>
+                `;
+                
+                // Add click event to open modal
+                const readMoreBtn = card.querySelector('.read-more');
+                readMoreBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    openModal(blog);
+                });
+                
+                // Also make entire card clickable
+                card.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('read-more')) {
+                        openModal(blog);
+                    }
+                });
+                
+                blogContainer.appendChild(card);
+            });
+        }
+        
+        // Function to open modal with blog content
+        function openModal(blog) {
+            // Set modal content
+            modalTitle.textContent = blog.title;
+            modalDate.textContent = `Published: ${new Date(blog.created_at).toLocaleDateString()}`;
+            modalImage.src = blog.image_url || 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80';
+            modalImage.alt = blog.title;
+            modalCategory.textContent = blog.category || 'Technology';
+            
+            // Format content with paragraphs
+            const contentArray = blog.content.split('\n\n');
+            let formattedContent = '';
+            
+            contentArray.forEach(paragraph => {
+                formattedContent += `<p>${paragraph}</p>`;
+            });
+            
+            modalContent.innerHTML = formattedContent;
+            
+            // Show modal
+            modal.style.display = 'block';
+            document.body.classList.add('modal-open');
+            document.documentElement.style.overflow = 'hidden';
+        }
+        
+        // Function to close modal
+        function closeModalHandler() {
+            modal.style.display = 'none';
+            document.body.classList.remove('modal-open');
+            document.documentElement.style.overflow = 'auto';
+        }
+        
+        // Initialize the blog
+        document.addEventListener('DOMContentLoaded', () => {
+            createGenerativeBackground();
+            
+            // Add floating animations
+            const style = document.createElement('style');
+            style.innerHTML = `
+                @keyframes float1 {
+                    0%, 100% { transform: translate(0, 0); }
+                    25% { transform: translate(-10px, -8px); }
+                    50% { transform: translate(5px, 10px); }
+                    75% { transform: translate(8px, -5px); }
+                }
+                
+                @keyframes float2 {
+                    0%, 100% { transform: translate(0, 0); }
+                    25% { transform: translate(8px, -10px); }
+                    50% { transform: translate(-10px, 8px); }
+                    75% { transform: translate(5px, 12px); }
+                }
+                
+                @keyframes float3 {
+                    0%, 100% { transform: translate(0, 0); }
+                    25% { transform: translate(-12px, 5px); }
+                    50% { transform: translate(8px, -8px); }
+                    75% { transform: translate(-5px, 10px); }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // Set up modal event listeners
+            backButton.addEventListener('click', closeModalHandler);
+            closeModal.addEventListener('click', closeModalHandler);
+            
+            // Close modal when clicking outside content
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModalHandler();
+                }
+            });
+            
+            // Close modal with Escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && modal.style.display === 'block') {
+                    closeModalHandler();
+                }
+            });
+            
+            // Simulate loading delay for demo
+            setTimeout(renderBlogs, 1500);
+        });
+    </script>
+</body>
+</html>
